@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/iand/logfmtr"
 	"github.com/imperialhound/friend-foe-api/internal/handlers"
+	"github.com/imperialhound/friend-foe-api/internal/middleware"
 )
 
 type CLI struct {
@@ -22,10 +23,13 @@ func (c *CLI) Run() error {
 	logger := newLogger()
 
 	r := mux.NewRouter()
-	r.HandleFunc("/", handlers.Sniff)
+	r.HandleFunc("/", middleware.Chain(handlers.Sniff,
+		middleware.LogRequestTime(logger),
+		middleware.ValidateMethods("GET")))
 
 	server := &http.Server{
-		Addr: fmt.Sprintf(":%s", c.Port),
+		Addr:    fmt.Sprintf(":%s", c.Port),
+		Handler: r,
 	}
 
 	logger.Info("starting friend-foe server", "port", c.Port)
