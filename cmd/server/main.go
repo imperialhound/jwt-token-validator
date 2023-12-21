@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,7 +11,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/iand/logfmtr"
 	"github.com/imperialhound/friend-foe-api/internal/handlers"
-	"github.com/imperialhound/friend-foe-api/internal/middleware"
 	"github.com/imperialhound/friend-foe-api/internal/utils"
 )
 
@@ -18,14 +18,18 @@ func main() {
 	// Generate config file
 	c := utils.NewConfig()
 
+	// Initalize context with cancel
+	ctx, cancel := context.WithCancel(context.Background())
+
 	// Initalize logger
 	logfmtr.SetVerbosity(c.Verbosity)
 	logger := utils.NewLogger()
 
+	// Add router and validator handler
 	r := mux.NewRouter()
-	r.HandleFunc("/", middleware.Chain(handlers.Sniff,
-		middleware.LogRequestTime(logger),
-		middleware.ValidateMethods("GET")))
+
+	validatorHandler := handlers.NewValidatorHandler(ctx, logger, c.AuthServer)
+	r.HandleFunc("/", validatorHandler.ValidateToken)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", c.Port),
@@ -46,5 +50,6 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	sig := <-sigChan
+	cancel()
 	logger.Info("shutting down friend-foe server", "signal", sig)
 }

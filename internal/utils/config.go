@@ -10,8 +10,10 @@ type Config struct {
 
 func NewConfig() Config {
 	viper.SetDefault("FF_PORT", 8080)
-	viper.SetDefault("FF_AUTHSERVER", "localhost:9000")
+	viper.SetDefault("FF_AUTHSERVER", "http://localhost:9000")
 	viper.SetDefault("FF_VERBOSITY", 1)
+
+	viper.AutomaticEnv()
 
 	return Config{
 		Port:       viper.GetInt("FF_PORT"),

@@ -15,5 +15,5 @@ COPY cmd/server/ ./cmd/server/
 RUN go build -o server cmd/server/main.go
 
 FROM alpine:3.18
-COPY --from=builder /cetp-auth-bridge /cetp-auth-bridge
+COPY --from=builder /src/server /server
 ENTRYPOINT ["/server"]
